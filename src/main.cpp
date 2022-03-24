@@ -4,7 +4,7 @@
 #include <IRremote.h>
 
 // Wiring: SDA pin is connected to A4 and SCL pin to A5.
-//
+
 LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 int receiver = 8;
@@ -48,11 +48,9 @@ void setup()
 }
 
 void loop()
-{
-  //lcd.setCursor(2, 0); // Set the cursor on the third column and first row.
-  //lcd.print('h'); lcd.print(" *C");  // Print the string "Hello World!"
-  lcd.setCursor(0, 1);
-  lcd.print("Hello World!");
+{ 
+  lcd.setCursor(0, 1); // Set the cursor on the first column and second row.
+  lcd.print("Hello World!"); // Print the string "Hello World!"
   lcd.setCursor(0, 0);
   if (irrecv.decode(&results))
   {
