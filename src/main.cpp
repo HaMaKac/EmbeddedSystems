@@ -1,3 +1,4 @@
+#include "SimpleDHT.h"
 #include <Arduino.h>
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
@@ -7,9 +8,10 @@
 // IR remote: pin 8
 
 LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
-
+int pinDHT11 = 2;
+SimpleDHT11 dht11; //G -ground, N - power,D - 2
 int receiver = 8;
-IRrecv irrecv(receiver);
+IRrecv irrecv(receiver); //Y - 8, G - ground, R - power
 decode_results results;
 
 int translateIR()
@@ -43,10 +45,10 @@ void setup()
 {
   lcd.init(); // initialize the lcd 
   lcd.backlight(); //
-  //Serial.begin(9600);
+  Serial.begin(9600);
   irrecv.enableIRIn(); //
   //pinMode(LED_BUILTIN, OUTPUT);
-  lcd.setCursor(2, 0); // Set the cursor on the first column and second row.
+  lcd.setCursor(2, 0); // Set the cursor on the third column and first row.
   lcd.print("Hello World!"); // Print the string "Hello World!"
   lcd.home();
 }
@@ -56,12 +58,34 @@ void loop()
   if (irrecv.decode(&results))
   {
     int number = translateIR(); 
-    
+    byte temperature;
+  byte humidity;
+  byte data[40] = {0};
+  dht11.read(pinDHT11, &temperature, &humidity, data);
   //digitalWrite(LED_BUILTIN, LOW);
     irrecv.resume();
     //Serial.println(number);
+    lcd.setCursor(2, 0);
     lcd.print(number); 
-    delay(500);
+    lcd.setCursor(2, 1);
+    lcd.print((int)temperature);
+    lcd.print("*C"); 
+    lcd.setCursor(7, 1);
+    lcd.print((int)humidity); 
+    lcd.print("%"); 
+    
+
+    
+    delay(1000);
     lcd.clear();
   } 
+  
+  
+  
+  
+  //Serial.print((int)temperature); Serial.print(" *C, ");
+  //Serial.print((int)humidity); Serial.println(" %");
+
+
+  delay(1000);
 }
