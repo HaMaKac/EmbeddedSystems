@@ -4,6 +4,24 @@
 #include <LiquidCrystal_I2C.h>
 #include <IRremote.h>
 
+#define IR_BUTTON_UP
+#define IR_BUTTON_RIGHT
+#define IR_BUTTON_DOWN
+#define IR_BUTTON_LEFT
+#define IR_BUTTON_OK
+#define IR_BUTTON_0
+#define IR_BUTTON_1
+#define IR_BUTTON_2
+#define IR_BUTTON_3
+#define IR_BUTTON_4
+#define IR_BUTTON_5
+#define IR_BUTTON_6
+#define IR_BUTTON_7
+#define IR_BUTTON_8
+#define IR_BUTTON_9
+#define IR_BUTTON_AST
+#define IR_BUTTON_HASH
+
 // Wiring: SDA pin is connected to A4 and SCL pin to A5.
 // IR remote: pin 8
 
