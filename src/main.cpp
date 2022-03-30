@@ -14,6 +14,12 @@ int receiver = 8;
 IRrecv irrecv(receiver); //Y - 8, G - ground, R - power
 decode_results results;
 bool mainScreen = true;
+int number = 99;
+  byte temperature;
+  byte humidity;
+  byte data[40] = {0};
+  byte alarmHour=0;
+  byte alarmMinute = 0;
 
 int translateIR()
 {
@@ -41,58 +47,107 @@ int translateIR()
   //  return 102;
   }
 }
+void printMainScreen()
+{
+  lcd.setCursor(2, 0);
+  lcd.print(number); 
+  lcd.setCursor(2, 1);
+  lcd.print("alarm: ");
+  lcd.print(alarmHour); 
+  lcd.print(":");
+  lcd.print(alarmMinute);
+}
+void printSideScreen()
+{
+  lcd.setCursor(2, 1);
+  lcd.print((int)temperature);
+  lcd.print("*C"); 
+  lcd.setCursor(7, 1);
+  lcd.print((int)humidity); 
+  lcd.print("%"); 
+}
 
 void setup()
 {
   lcd.init(); // initialize the lcd 
-  lcd.backlight(); //
+  lcd.backlight();
   Serial.begin(9600);
-  irrecv.enableIRIn(); //
-  //pinMode(LED_BUILTIN, OUTPUT);
-  lcd.setCursor(2, 0); // Set the cursor on the third column and first row.
-  lcd.print("Hello World!"); // Print the string "Hello World!"
+  irrecv.enableIRIn();
   lcd.home();
 }
-
+void inputAlarm()
+{
+  byte digit=1;
+  alarmHour = 0;
+  alarmMinute = 0;
+  //irrecv.resume();
+  if (irrecv.decode(&results)) //first digit of hour
+  {
+    digit = translateIR(); 
+    if(digit >=0 && digit <=2) alarmHour += digit*10; 
+    delay(500);   
+    //alarmHour=11;
+    //irrecv.resume();
+    Serial.println(digit);
+    printMainScreen();
+    delay(500); 
+  } 
+  if (irrecv.decode(&results)) //second digit of hour
+  {
+    digit = translateIR(); 
+    if(digit >=0 && digit <=9 && (digit <= 4 || alarmHour < 20) ) alarmHour += digit;    
+    delay(500);
+    //alarmHour=12;
+    //irrecv.resume();
+    Serial.println(digit);
+    printMainScreen();
+    delay(500); 
+  } 
+  if (irrecv.decode(&results)) //first digit of minute
+  {
+    digit = translateIR(); 
+    if(digit >=0 && digit <=5) alarmMinute += digit*10;  
+    delay(500);  
+    //alarmMinute=11;
+    //irrecv.resume();
+    Serial.println(digit);
+    printMainScreen();
+    delay(500); 
+  } 
+  if (irrecv.decode(&results)) //second digit of minute
+  {
+    digit = translateIR(); 
+    if(digit >=0 && digit <=9) alarmMinute += digit;    
+    delay(500);
+    //alarmMinute=12;
+    //irrecv.resume();
+    Serial.println(digit);
+    printMainScreen();
+    delay(500); 
+  } 
+}
 void loop()
 { 
-  int number=0;
+  
+  dht11.read(pinDHT11, &temperature, &humidity, data);
+  
   if (irrecv.decode(&results))
   {
     number = translateIR(); 
     if(number==12) mainScreen = false;
     if(number==14) mainScreen = true;
+    if(number==-1) inputAlarm();
     irrecv.resume();
   } 
   
-  byte temperature;
-  byte humidity;
-  byte data[40] = {0};
-  dht11.read(pinDHT11, &temperature, &humidity, data);
-  
   if(mainScreen)
   {
-    lcd.setCursor(2, 0);
-    lcd.print(number); 
-
-    delay(1000);
-    lcd.clear();
+    printMainScreen();
   } else 
   {
-    lcd.setCursor(2, 1);
-    lcd.print((int)temperature);
-    lcd.print("*C"); 
-    lcd.setCursor(7, 1);
-    lcd.print((int)humidity); 
-    lcd.print("%"); 
+    printSideScreen();
   }
-  
-  
-  
-  
-  //Serial.print((int)temperature); Serial.print(" *C, ");
-  //Serial.print((int)humidity); Serial.println(" %");
-
-
   delay(1000);
+  lcd.clear();
+  
 }
