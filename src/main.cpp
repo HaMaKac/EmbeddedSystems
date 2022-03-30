@@ -4,24 +4,6 @@
 #include <LiquidCrystal_I2C.h>
 #include <IRremote.h>
 
-#define IR_BUTTON_UP
-#define IR_BUTTON_RIGHT
-#define IR_BUTTON_DOWN
-#define IR_BUTTON_LEFT
-#define IR_BUTTON_OK
-#define IR_BUTTON_0
-#define IR_BUTTON_1
-#define IR_BUTTON_2
-#define IR_BUTTON_3
-#define IR_BUTTON_4
-#define IR_BUTTON_5
-#define IR_BUTTON_6
-#define IR_BUTTON_7
-#define IR_BUTTON_8
-#define IR_BUTTON_9
-#define IR_BUTTON_AST
-#define IR_BUTTON_HASH
-
 // Wiring: SDA pin is connected to A4 and SCL pin to A5.
 // IR remote: pin 8
 
@@ -31,6 +13,7 @@ SimpleDHT11 dht11; //G -ground, N - power,D - 2
 int receiver = 8;
 IRrecv irrecv(receiver); //Y - 8, G - ground, R - power
 decode_results results;
+bool mainScreen = true;
 
 int translateIR()
 {
@@ -73,30 +56,36 @@ void setup()
 
 void loop()
 { 
+  int number=0;
   if (irrecv.decode(&results))
   {
-    int number = translateIR(); 
-    byte temperature;
+    number = translateIR(); 
+    if(number==12) mainScreen = false;
+    if(number==14) mainScreen = true;
+    irrecv.resume();
+  } 
+  
+  byte temperature;
   byte humidity;
   byte data[40] = {0};
   dht11.read(pinDHT11, &temperature, &humidity, data);
-  //digitalWrite(LED_BUILTIN, LOW);
-    irrecv.resume();
-    //Serial.println(number);
+  
+  if(mainScreen)
+  {
     lcd.setCursor(2, 0);
     lcd.print(number); 
+
+    delay(1000);
+    lcd.clear();
+  } else 
+  {
     lcd.setCursor(2, 1);
     lcd.print((int)temperature);
     lcd.print("*C"); 
     lcd.setCursor(7, 1);
     lcd.print((int)humidity); 
     lcd.print("%"); 
-    
-
-    
-    delay(1000);
-    lcd.clear();
-  } 
+  }
   
   
   
