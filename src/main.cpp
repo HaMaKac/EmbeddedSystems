@@ -4,18 +4,19 @@
 #include <LiquidCrystal_I2C.h>
 #include <IRremote.h>
 #include "IRbuttons.h"
+#include "melody.h"
 
 #define IR_RECEIVE_PIN 8
 
 // Wiring: SDA pin is connected to A4 and SCL pin to A5.
 // IR remote: pin 8
 
-LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 int pinDHT11 = 2;
 SimpleDHT11 dht11; //G -ground, N - power, D - 2
-//Y - 8, G - ground, R - power
+//IR remote: Y - 8, G - ground, R - power
 bool mainScreen = true;
-int number = 99;
+//int number = 99;
   byte temperature;
   byte humidity;
   byte data[40] = {0};
@@ -26,10 +27,53 @@ int number = 99;
 
 int digit=0;
 
+int translateIR()
+{
+  int key = IrReceiver.decodedIRData.command;
+  switch(key)
+  {
+  case IR_BUTTON_0: return 0;
+  case IR_BUTTON_1: return 1;
+  case IR_BUTTON_2: return 2;
+  case IR_BUTTON_3: return 3;
+  case IR_BUTTON_4: return 4;
+  case IR_BUTTON_5: return 5;
+  case IR_BUTTON_6: return 6;
+  case IR_BUTTON_7: return 7;
+  case IR_BUTTON_8: return 8;
+  case IR_BUTTON_9: return 9;
+  }
+}
+
+void playMelody()
+{
+  while(true)
+  {
+    const int totalNotes = sizeof(notes) / sizeof(int);
+  // Loop through each note
+  for (int i = 0; i < totalNotes; i++)
+  {
+    const int currentNote = notes[i];
+    float wait = durations[i] / songSpeed;
+    // Play tone if currentNote is not 0 frequency, otherwise pause (noTone)
+    if (currentNote != 0)
+    {
+      tone(buzzer, notes[i], wait); // tone(pin, frequency, duration)
+    }
+    else
+    {
+      noTone(buzzer);
+    }
+    // delay is used to wait for tone to finish playing before moving to next loop
+    delay(wait);
+  }
+  }
+}
+
 void printMainScreen()
 {
   lcd.setCursor(2, 0);
-  lcd.print(number); 
+  //lcd.print(number); 
   lcd.setCursor(2, 1);
   lcd.print("alarm: ");
   lcd.print(alarmHour1);
@@ -49,82 +93,75 @@ void printSideScreen()
   lcd.print("%"); 
 }
 
-void translateIR()
-{
-  IrReceiver.decode();
-  
-  int tree = IrReceiver.decodedIRData.command;
-  switch (tree)
-  {
-    case IR_BUTTON_5: digit = 5;
-  }
-  IrReceiver.resume();
-}
-/*
 void inputAlarm()
 {
-  
-  //irrecv.resume();
+  alarmHour1 = 0;
+  alarmHour2 = 0;
+  alarmMinute1 = 0;
+  alarmMinute2 = 0;
+  printMainScreen();
+  delay(500);
+  IrReceiver.resume();
+  bool cont = true;
+
+  while(!IrReceiver.decode()) {}
   if (IrReceiver.decode()) //first digit of hour
   {
-    IrReceiver.resume();
-    int command = IrReceiver.decodedIRData.command;
-    if(digit >=0 && digit <=2) alarmHour += digit*10; 
-    delay(500);   
-    //alarmHour=11;
-    //irrecv.resume();
-    Serial.println(digit);
-    printMainScreen();
-    delay(500); 
-  } 
-  if (irrecv.decode(&results)) //second digit of hour
-  {
     digit = translateIR(); 
-    if(digit >=0 && digit <=9 && (digit <= 4 || alarmHour < 20) ) alarmHour += digit;    
+    if(digit >=0 && digit <=2) alarmHour1 = digit;
+    else cont = false; 
+    printMainScreen();
     delay(500);
-    //alarmHour=12;
-    //irrecv.resume();
-    Serial.println(digit);
-    printMainScreen();
-    delay(500); 
+    IrReceiver.resume(); 
   } 
-  if (irrecv.decode(&results)) //first digit of minute
+  while(!IrReceiver.decode() && cont) {}
+  if (IrReceiver.decode()) //second digit of hour
   {
     digit = translateIR(); 
-    if(digit >=0 && digit <=5) alarmMinute += digit*10;  
-    delay(500);  
-    //alarmMinute=11;
-    //irrecv.resume();
-    Serial.println(digit);
+    if(digit >=0 && digit <=9 && (digit <= 4 || alarmHour1 < 2) ) alarmHour2 = digit;    
+    else cont = false; 
     printMainScreen();
-    delay(500); 
-  } 
-  if (irrecv.decode(&results)) //second digit of minute
-  {
-    digit = translateIR(); 
-    if(digit >=0 && digit <=9) alarmMinute += digit;    
     delay(500);
-    //alarmMinute=12;
-    //irrecv.resume();
-    Serial.println(digit);
+    IrReceiver.resume(); 
+  } 
+  while(!IrReceiver.decode() && cont) {}
+  if (IrReceiver.decode()) //first digit of minute
+  {
+    digit = translateIR(); 
+    if(digit >=0 && digit <=5) alarmMinute1 = digit;  
+    else cont = false; 
     printMainScreen();
-    delay(500); 
+    delay(500);
+    IrReceiver.resume(); 
+  } 
+  while(!IrReceiver.decode() && cont) {}
+  if (IrReceiver.decode()) //second digit of minute
+  {
+    digit = translateIR(); 
+    if(digit >=0 && digit <=9) alarmMinute2 = digit;    
+    else cont = false; 
+    printMainScreen();
+    delay(500);
+    IrReceiver.resume(); 
+  }
+  if (!cont) 
+  {
+    lcd.setCursor(0, 0);
+    lcd.print("try again");
+    //delay(2000);
   } 
 }
-*/
 
 void setup()
 {
-  lcd.init(); // initialize the lcd 
+  lcd.init();
   lcd.backlight();
-  Serial.begin(9600);
   IrReceiver.begin(IR_RECEIVE_PIN); // Start the receiver
   lcd.home();
+  dht11.read(pinDHT11, &temperature, &humidity, data);
 }
 
 void loop() {
-
-  //dht11.read(pinDHT11, &temperature, &humidity, data);
 
   if (IrReceiver.decode())
   {
@@ -140,24 +177,21 @@ void loop() {
       lcd.clear();
       mainScreen = true;
     }
-    if (command == IR_BUTTON_OK) 
+    if (command == IR_BUTTON_AST) 
     {
       lcd.clear();
-      //inputAlarm();
+      inputAlarm();
       translateIR();
-      Serial.println(digit);
     }
   }
   
   if(mainScreen)
   {
-    //lcd.clear();
     printMainScreen();
   } else 
   {
-    //lcd.clear();
     printSideScreen();
   }
-  //lcd.clear();
+  //playMelody();
 
 }
