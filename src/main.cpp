@@ -1,18 +1,19 @@
-#include "SimpleDHT.h"
+#include <SimpleDHT.h>
 #include <Arduino.h>
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 #include <IRremote.h>
+#include "virtuabotixRTC.h"
 #include "IRbuttons.h"
 #include "melody.h"
+#include "setup.h"
 
-#define IR_RECEIVE_PIN 8
+
 
 // Wiring: SDA pin is connected to A4 and SCL pin to A5.
 // IR remote: pin 8
 
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
-int pinDHT11 = 2;
 SimpleDHT11 dht11; //G -ground, N - power, D - 2
 //IR remote: Y - 8, G - ground, R - power
 bool mainScreen = true;
@@ -24,6 +25,11 @@ bool mainScreen = true;
   byte alarmHour2=0;
   byte alarmMinute1 = 0;
   byte alarmMinute2 = 0;
+  virtuabotixRTC myRTC(4,5,6); 
+  byte A_hour=0;
+  byte A_minute=0;
+  byte AlarmIsActive=0;
+
 
 int digit=0;
 
@@ -45,34 +51,59 @@ int translateIR()
   }
 }
 
+bool isHumidity()
+{
+  dht11.read(DHT_PIN, &temperature, &humidity, data);
+  if((int)humidity > 50) return true;
+  else return false;
+}
+
+bool checkTasks()
+{
+  return isHumidity();
+}
+
 void playMelody()
 {
   while(true)
   {
     const int totalNotes = sizeof(notes) / sizeof(int);
-  // Loop through each note
-  for (int i = 0; i < totalNotes; i++)
-  {
-    const int currentNote = notes[i];
-    float wait = durations[i] / songSpeed;
-    // Play tone if currentNote is not 0 frequency, otherwise pause (noTone)
-    if (currentNote != 0)
+
+    for (int i = 0; i < totalNotes; i++)
     {
-      tone(buzzer, notes[i], wait); // tone(pin, frequency, duration)
+      if(checkTasks) return;
+      const int currentNote = notes[i];
+      float wait = durations[i];
+      // Play tone if currentNote is not 0 frequency, otherwise pause (noTone)
+      if (currentNote != 0)
+      {
+        tone(BUZZER_PIN, notes[i], wait); // tone(pin, frequency, duration)
+      }
+      else
+      {
+        noTone(BUZZER_PIN);
+      }
+      // delay is used to wait for tone to finish playing before moving to next loop
+      delay(wait);
     }
-    else
-    {
-      noTone(buzzer);
-    }
-    // delay is used to wait for tone to finish playing before moving to next loop
-    delay(wait);
-  }
   }
 }
 
 void printMainScreen()
 {
-  lcd.setCursor(2, 0);
+  lcd.setCursor(0,0);
+  lcd.print(myRTC.dayofmonth);
+  lcd.print("/");
+  lcd.print(myRTC.month);
+  //lcd.print("/");
+  //lcd.print(myRTC.year);
+  lcd.print(" ");
+  lcd.print(myRTC.hours);
+  lcd.print(":");
+  lcd.print(myRTC.minutes);
+  lcd.print(":");
+  lcd.print(myRTC.seconds);
+  //lcd.setCursor(2, 0);
   //lcd.print(number); 
   lcd.setCursor(2, 1);
   lcd.print("alarm: ");
@@ -84,7 +115,7 @@ void printMainScreen()
 }
 void printSideScreen()
 {
-  dht11.read(pinDHT11, &temperature, &humidity, data);
+  dht11.read(DHT_PIN, &temperature, &humidity, data);
   lcd.setCursor(2, 1);
   lcd.print((int)temperature);
   lcd.print("*C"); 
@@ -147,21 +178,30 @@ void inputAlarm()
   if (!cont) 
   {
     lcd.setCursor(0, 0);
-    lcd.print("try again");
+    //lcd.print("try again");
     //delay(2000);
   } 
 }
 
 void setup()
 {
+  //Serial.begin(9600);
   lcd.init();
   lcd.backlight();
-  IrReceiver.begin(IR_RECEIVE_PIN); // Start the receiver
+  IrReceiver.begin(IR_PIN); // Start the receiver
   lcd.home();
-  dht11.read(pinDHT11, &temperature, &humidity, data);
+  dht11.read(DHT_PIN, &temperature, &humidity, data);
+  myRTC.setDS1302Time(00, 7, 1, 1, 4, 4, 2022);
 }
 
 void loop() {
+
+myRTC.updateTime();
+ 
+  if(myRTC.hours == alarmHour1 + alarmHour2 && myRTC.minutes == alarmMinute1 + alarmMinute2)
+  {
+    playMelody();
+  }
 
   if (IrReceiver.decode())
   {
@@ -192,6 +232,4 @@ void loop() {
   {
     printSideScreen();
   }
-  //playMelody();
-
 }
