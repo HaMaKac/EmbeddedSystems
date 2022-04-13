@@ -29,6 +29,7 @@ bool mainScreen = true;
   byte A_hour=0;
   byte A_minute=0;
   bool alarmIsActive=false;
+  //bool shouldClear = true;
 
 
 int digit=0;
@@ -54,6 +55,7 @@ int translateIR()
 void printMainScreen()
 {
   myRTC.updateTime();
+  //bool shouldClear = true;
   lcd.setCursor(0,0);
   lcd.print(myRTC.dayofmonth);
   lcd.print("/");
@@ -63,9 +65,26 @@ void printMainScreen()
   lcd.print(" ");
   lcd.print(myRTC.hours);
   lcd.print(":");
-  lcd.print(myRTC.minutes);
-  lcd.print(":");
-  lcd.print(myRTC.seconds);
+  if(myRTC.minutes < 10)
+  {
+    lcd.print("0");
+    lcd.print(myRTC.minutes);
+    lcd.print(":");
+  }
+  else
+  {
+    lcd.print(myRTC.minutes);
+    lcd.print(":");
+  }
+  if(myRTC.seconds < 10)
+  {
+    lcd.print("0");
+    lcd.print(myRTC.seconds);
+  }
+  else
+  {
+    lcd.print(myRTC.seconds);
+  }
   //lcd.setCursor(2, 0);
   //lcd.print(number); 
   lcd.setCursor(2, 1);
@@ -75,7 +94,13 @@ void printMainScreen()
   lcd.print(":");
   lcd.print(alarmMinute1);
   lcd.print(alarmMinute2);
-  if(myRTC.seconds == 0) lcd.clear();
+  /*
+  if(myRTC.seconds == 0 && shouldClear) 
+  {
+    lcd.clear();
+    shouldClear = false;
+  }
+  */
 }
 
 bool isHumidity()
@@ -93,7 +118,7 @@ bool checkTasks()
 
 void playMelody()
 {
-  while(true)
+  while(alarmIsActive)
   {
     const int totalNotes = sizeof(notes) / sizeof(int);
 
@@ -101,7 +126,7 @@ void playMelody()
     {
       if(checkTasks()) 
       {
-        //alarmIsActive = false;
+        alarmIsActive = false;
         return;
       }
       printMainScreen();
@@ -199,28 +224,31 @@ void setup()
   IrReceiver.begin(IR_PIN); // Start the receiver
   lcd.home();
   dht11.read(DHT_PIN, &temperature, &humidity, data);
-  myRTC.setDS1302Time(45, 10, 15, 5, 1, 4, 2022);
+  myRTC.setDS1302Time(45, 9, 15, 5, 1, 4, 2022);
 }
 
 void loop() {
 
 
- //myRTC.updateTime();
+  //myRTC.updateTime();
   if(alarmIsActive && myRTC.hours == (alarmHour1*10 + alarmHour2) && myRTC.minutes == (alarmMinute1*10 + alarmMinute2))
   {
     playMelody();
-    alarmIsActive = false;
+    //alarmIsActive = false;
     alarmHour1=0;
     alarmHour2=0;
     alarmMinute1 = 0;
     alarmMinute2 = 0;
-    return;
+    //return;
   }
 
   if (IrReceiver.decode())
   {
+    Serial.println("abc");
     IrReceiver.resume();
     int command = IrReceiver.decodedIRData.command;
+    //IrReceiver.resume();
+    Serial.println(command);
     if (command == IR_BUTTON_RIGHT) 
     { 
       lcd.clear();
@@ -242,6 +270,7 @@ void loop() {
   if(mainScreen)
   {
     printMainScreen();
+    
   } else 
   {
     printSideScreen();
