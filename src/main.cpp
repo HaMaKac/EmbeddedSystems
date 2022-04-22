@@ -9,15 +9,14 @@
 #include "setup.h"
 
 
-
 // Wiring: SDA pin is connected to A4 and SCL pin to A5.
-// IR remote: pin 8
+//IR remote: Y - pin 8, G - ground, R - power
 
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 SimpleDHT11 dht11; //G -ground, N - power, D - 2
-//IR remote: Y - 8, G - ground, R - power
+
 bool mainScreen = true;
-//int number = 99;
+
   byte temperature;
   byte humidity;
   byte data[40] = {0};
@@ -25,11 +24,10 @@ bool mainScreen = true;
   byte alarmHour2=0;
   byte alarmMinute1 = 0;
   byte alarmMinute2 = 0;
-  virtuabotixRTC myRTC(4,5,6); 
+  virtuabotixRTC myRTC(4,5,6);
   byte A_hour=0;
   byte A_minute=0;
   bool alarmIsActive=false;
-  //bool shouldClear = true;
 
 
 int digit=0;
@@ -55,16 +53,22 @@ int translateIR()
 void printMainScreen()
 {
   myRTC.updateTime();
-  //bool shouldClear = true;
   lcd.setCursor(0,0);
   lcd.print(myRTC.dayofmonth);
   lcd.print("/");
   lcd.print(myRTC.month);
-  //lcd.print("/");
-  //lcd.print(myRTC.year);
   lcd.print(" ");
-  lcd.print(myRTC.hours);
-  lcd.print(":");
+  if(myRTC.hours < 10)
+  {
+    lcd.print("0");
+    lcd.print(myRTC.hours);
+    lcd.print(":");
+  }
+  else
+  {
+    lcd.print(myRTC.hours);
+    lcd.print(":");
+  }
   if(myRTC.minutes < 10)
   {
     lcd.print("0");
@@ -84,9 +88,7 @@ void printMainScreen()
   else
   {
     lcd.print(myRTC.seconds);
-  }
-  //lcd.setCursor(2, 0);
-  //lcd.print(number); 
+  } 
   lcd.setCursor(2, 1);
   lcd.print("alarm: ");
   lcd.print(alarmHour1);
@@ -94,13 +96,6 @@ void printMainScreen()
   lcd.print(":");
   lcd.print(alarmMinute1);
   lcd.print(alarmMinute2);
-  /*
-  if(myRTC.seconds == 0 && shouldClear) 
-  {
-    lcd.clear();
-    shouldClear = false;
-  }
-  */
 }
 
 bool isHumidity()
@@ -169,7 +164,7 @@ void inputAlarm()
   IrReceiver.resume();
   bool cont = true;
 
-  while(!IrReceiver.decode()) {}
+  while(!IrReceiver.decode()) {printMainScreen();}
   if (IrReceiver.decode()) //first digit of hour
   {
     digit = translateIR(); 
@@ -179,7 +174,7 @@ void inputAlarm()
     delay(500);
     IrReceiver.resume(); 
   } 
-  while(!IrReceiver.decode() && cont) {}
+  while(!IrReceiver.decode() && cont) {printMainScreen();}
   if (IrReceiver.decode()) //second digit of hour
   {
     digit = translateIR(); 
@@ -189,7 +184,7 @@ void inputAlarm()
     delay(500);
     IrReceiver.resume(); 
   } 
-  while(!IrReceiver.decode() && cont) {}
+  while(!IrReceiver.decode() && cont) {printMainScreen();}
   if (IrReceiver.decode()) //first digit of minute
   {
     digit = translateIR(); 
@@ -199,7 +194,7 @@ void inputAlarm()
     delay(500);
     IrReceiver.resume(); 
   } 
-  while(!IrReceiver.decode() && cont) {}
+  while(!IrReceiver.decode() && cont) {printMainScreen();}
   if (IrReceiver.decode()) //second digit of minute
   {
     digit = translateIR(); 
@@ -218,37 +213,30 @@ void inputAlarm()
 
 void setup()
 {
-  Serial.begin(9600);
   lcd.init();
   lcd.backlight();
   IrReceiver.begin(IR_PIN); // Start the receiver
   lcd.home();
   dht11.read(DHT_PIN, &temperature, &humidity, data);
-  myRTC.setDS1302Time(45, 9, 15, 5, 1, 4, 2022);
+  //myRTC.setDS1302Time(40, 1, 3, 5, 22, 4, 2022);
 }
 
 void loop() {
 
-
-  //myRTC.updateTime();
+  myRTC.updateTime();
   if(alarmIsActive && myRTC.hours == (alarmHour1*10 + alarmHour2) && myRTC.minutes == (alarmMinute1*10 + alarmMinute2))
   {
     playMelody();
-    //alarmIsActive = false;
     alarmHour1=0;
     alarmHour2=0;
     alarmMinute1 = 0;
     alarmMinute2 = 0;
-    //return;
   }
 
   if (IrReceiver.decode())
   {
-    Serial.println("abc");
     IrReceiver.resume();
     int command = IrReceiver.decodedIRData.command;
-    //IrReceiver.resume();
-    Serial.println(command);
     if (command == IR_BUTTON_RIGHT) 
     { 
       lcd.clear();
