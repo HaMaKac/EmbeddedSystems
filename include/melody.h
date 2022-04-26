@@ -16,9 +16,15 @@
 
 // Music notes of the song, 0 is a rest/pulse
 int notes[] = {
-    NOTE_C4, NOTE_D4, NOTE_E4, NOTE_F4, NOTE_G4, NOTE_G4, 0};
+    NOTE_E4, NOTE_G4, NOTE_A4, NOTE_A4, 0,
+    NOTE_A4, NOTE_B4, NOTE_C5, NOTE_C5, 0,
+    NOTE_C5, NOTE_D5, NOTE_B4, NOTE_B4, 0,
+    NOTE_A4, NOTE_G4, NOTE_A4, 0};
 
 // Durations (in ms) of each music note of the song
 // Quarter Note is 250 ms when songSpeed = 1.0
 int durations[] = {
-    250, 125, 125, 250, 125, 125, 125};
+    125, 125, 250, 125, 125,
+    125, 125, 250, 125, 125,
+    125, 125, 250, 125, 125,
+    125, 125, 375, 125,};

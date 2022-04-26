@@ -3,6 +3,7 @@
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 #include <IRremote.h>
+#include <Ultrasonic.h>
 #include <virtuabotixRTC.h>
 #include "IRbuttons.h"
 #include "melody.h"
@@ -13,13 +14,16 @@
 //IR remote: Y - pin 8, G - ground, R - power
 
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
-SimpleDHT11 dht11; //G -ground, N - power, D - 2
+SimpleDHT11 dht11; //G - ground, N - power, D - 2
+Ultrasonic ultrasonic(12, 13); //12 - trigger, 13 - echo
 
 bool mainScreen = true;
 
   byte temperature;
   byte humidity;
   byte data[40] = {0};
+  byte water_level;
+  byte distance;
   byte alarmHour1=0;
   byte alarmHour2=0;
   byte alarmMinute1 = 0;
@@ -28,7 +32,7 @@ bool mainScreen = true;
   byte A_hour=0;
   byte A_minute=0;
   bool alarmIsActive=false;
-
+  
 
 int digit=0;
 
@@ -101,14 +105,53 @@ void printMainScreen()
 bool isHumidity()
 {
   dht11.read(DHT_PIN, &temperature, &humidity, data);
-  if((int)humidity > 50) return true;
-  else return false;
+  if((int)humidity > 75)
+  {
+    analogWrite(GREEN_LED, 5);
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+  return false;  
+}
+
+bool isWet()
+{
+  delay(10);
+  water_level = analogRead(WATER_PIN);
+  if (water_level > 50)
+  {
+    analogWrite(GREEN_LED, 20);
+    return true;
+  }
+  else
+  {
+    return false;
+  } 
+  return false; 
+}
+
+bool isNear()
+{
+  distance = ultrasonic.read();
+  //Serial.println(distance);
+  if (distance < 10)
+  {
+    analogWrite(GREEN_LED, 100);
+    return true;
+  }
+  else
+  {
+    return false;
+  }
   return false;
 }
 
 bool checkTasks()
 {
-  return isHumidity();
+  return isHumidity() && isWet() && isNear();
 }
 
 void playMelody()
@@ -144,11 +187,11 @@ void playMelody()
 
 void printSideScreen()
 {
+  analogWrite(GREEN_LED, 0);
   dht11.read(DHT_PIN, &temperature, &humidity, data);
-  lcd.setCursor(2, 1);
+  lcd.home();
   lcd.print((int)temperature);
-  lcd.print("*C"); 
-  lcd.setCursor(7, 1);
+  lcd.print("*C ");
   lcd.print((int)humidity); 
   lcd.print("%"); 
 }
@@ -213,12 +256,13 @@ void inputAlarm()
 
 void setup()
 {
+  //Serial.begin(9600);
   lcd.init();
   lcd.backlight();
   IrReceiver.begin(IR_PIN); // Start the receiver
   lcd.home();
   dht11.read(DHT_PIN, &temperature, &humidity, data);
-  //myRTC.setDS1302Time(40, 1, 3, 5, 22, 4, 2022);
+  myRTC.setDS1302Time(50, 36, 14, 1, 25, 4, 2022);
 }
 
 void loop() {
