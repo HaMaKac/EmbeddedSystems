@@ -112,6 +112,7 @@ bool isHumidity()
   }
   else
   {
+    analogWrite(YELLOW_LED, 255);
     return false;
   }
   return false;  
@@ -128,6 +129,7 @@ bool isWet()
   }
   else
   {
+    analogWrite(GREEN_LED, 255);
     return false;
   } 
   return false; 
@@ -136,7 +138,6 @@ bool isWet()
 bool isNear()
 {
   distance = ultrasonic.read();
-  //Serial.println(distance);
   if (distance < 10)
   {
     analogWrite(RED_LED, 0);
@@ -144,6 +145,7 @@ bool isNear()
   }
   else
   {
+    analogWrite(RED_LED, 255);
     return false;
   }
   return false;
@@ -190,13 +192,46 @@ void playMelody()
 
 void printSideScreen()
 {
-  analogWrite(GREEN_LED, 0);
   dht11.read(DHT_PIN, &temperature, &humidity, data);
+  water_level = analogRead(WATER_PIN);
+  distance = ultrasonic.read();
   lcd.home();
   lcd.print((int)temperature);
   lcd.print("*C ");
   lcd.print((int)humidity); 
-  lcd.print("%"); 
+  lcd.print("%");
+  lcd.setCursor(0, 1);
+  if(water_level < 10)
+  {
+    lcd.print("00");
+    lcd.print(water_level);
+  }
+  if(water_level >= 10 && water_level < 100)
+  {
+    lcd.print("0");
+    lcd.print(water_level);
+  }
+  if(water_level >= 100)
+  {
+    lcd.print(water_level);
+  }
+  lcd.setCursor(5, 1);
+  if(distance < 10)
+  {
+    lcd.print("00");
+    lcd.print(distance);
+  }
+  if(distance >= 10 && distance < 100)
+  {
+    lcd.print("0");
+    lcd.print(distance);
+  }
+  if(distance >= 100)
+  {
+    lcd.print(distance);
+  }
+  lcd.print("cm");
+  delay(200);
 }
 
 void inputAlarm()
@@ -259,7 +294,6 @@ void inputAlarm()
 
 void setup()
 {
-  //Serial.begin(9600);
   lcd.init();
   lcd.backlight();
   IrReceiver.begin(IR_PIN); // Start the receiver
