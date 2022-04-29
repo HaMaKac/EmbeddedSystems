@@ -28,7 +28,7 @@ bool mainScreen = true;
   byte alarmHour2=0;
   byte alarmMinute1 = 0;
   byte alarmMinute2 = 0;
-  virtuabotixRTC myRTC(4,5,6);
+  virtuabotixRTC myRTC(4,5,7);
   byte A_hour=0;
   byte A_minute=0;
   bool alarmIsActive=false;
@@ -107,7 +107,7 @@ bool isHumidity()
   dht11.read(DHT_PIN, &temperature, &humidity, data);
   if((int)humidity > 75)
   {
-    analogWrite(GREEN_LED, 5);
+    analogWrite(GREEN_LED, 100);
     return true;
   }
   else
@@ -139,7 +139,7 @@ bool isNear()
   //Serial.println(distance);
   if (distance < 10)
   {
-    analogWrite(GREEN_LED, 100);
+    analogWrite(GREEN_LED, 5);
     return true;
   }
   else
@@ -165,6 +165,7 @@ void playMelody()
       if(checkTasks()) 
       {
         alarmIsActive = false;
+        analogWrite(GREEN_LED, 0);
         return;
       }
       printMainScreen();
@@ -270,6 +271,7 @@ void loop() {
   myRTC.updateTime();
   if(alarmIsActive && myRTC.hours == (alarmHour1*10 + alarmHour2) && myRTC.minutes == (alarmMinute1*10 + alarmMinute2))
   {
+    analogWrite(GREEN_LED, 150);
     playMelody();
     alarmHour1=0;
     alarmHour2=0;
