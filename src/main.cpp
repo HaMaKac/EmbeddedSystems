@@ -105,9 +105,9 @@ void printMainScreen()
 bool isHumidity()
 {
   dht11.read(DHT_PIN, &temperature, &humidity, data);
-  if((int)humidity > 75)
+  if((int)humidity > 60)
   {
-    analogWrite(GREEN_LED, 100);
+    analogWrite(YELLOW_LED, 0);
     return true;
   }
   else
@@ -123,7 +123,7 @@ bool isWet()
   water_level = analogRead(WATER_PIN);
   if (water_level > 50)
   {
-    analogWrite(GREEN_LED, 20);
+    analogWrite(GREEN_LED, 0);
     return true;
   }
   else
@@ -139,7 +139,7 @@ bool isNear()
   //Serial.println(distance);
   if (distance < 10)
   {
-    analogWrite(GREEN_LED, 5);
+    analogWrite(RED_LED, 0);
     return true;
   }
   else
@@ -151,7 +151,7 @@ bool isNear()
 
 bool checkTasks()
 {
-  return isHumidity() && isWet() && isNear();
+  return isHumidity() & isWet() & isNear();
 }
 
 void playMelody()
@@ -166,6 +166,8 @@ void playMelody()
       {
         alarmIsActive = false;
         analogWrite(GREEN_LED, 0);
+        analogWrite(YELLOW_LED, 0);
+        analogWrite(RED_LED, 0);
         return;
       }
       printMainScreen();
@@ -271,7 +273,9 @@ void loop() {
   myRTC.updateTime();
   if(alarmIsActive && myRTC.hours == (alarmHour1*10 + alarmHour2) && myRTC.minutes == (alarmMinute1*10 + alarmMinute2))
   {
-    analogWrite(GREEN_LED, 150);
+    analogWrite(GREEN_LED, 255);
+    analogWrite(YELLOW_LED, 255);
+    analogWrite(RED_LED, 255);
     playMelody();
     alarmHour1=0;
     alarmHour2=0;
