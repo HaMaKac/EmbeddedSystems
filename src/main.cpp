@@ -299,7 +299,7 @@ void setup()
   IrReceiver.begin(IR_PIN); // Start the receiver
   lcd.home();
   dht11.read(DHT_PIN, &temperature, &humidity, data);
-  myRTC.setDS1302Time(50, 36, 14, 1, 25, 4, 2022);
+  //myRTC.setDS1302Time(0, 10, 21, 7, 1, 5, 2022);
 }
 
 void loop() {
